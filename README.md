@@ -77,11 +77,29 @@ Config complète : [`config/packages/security.yaml`](config/packages/security.ya
 
 **Côté Google Cloud Console** :
 
-1. Créer un projet dédié.
-2. Écran de consentement OAuth : type **Externe**. En mode **Test**, seuls les comptes déclarés comme
-   utilisateurs test peuvent se connecter ; publier l'application pour l'ouvrir à tous.
-3. Identifiants → ID client OAuth, type **Application Web**, URI de redirection autorisée :
-   `https://localhost:9443/auth/google/callback` (Google accepte `localhost`).
+1. Sur <https://console.cloud.google.com/>, sélecteur de projet → **Nouveau projet** (sans
+   organisation), puis vérifier qu'il est bien sélectionné.
+2. **API et services → Écran de consentement OAuth** (« Google Auth Platform » → **Commencer**) :
+   - informations sur l'application : nom affiché à l'utilisateur, email d'assistance ;
+   - cible : **Externe** (comptes Gmail ordinaires, hors Google Workspace) ;
+   - coordonnées, acceptation des conditions → **Créer** ;
+   - **Cible (Audience)** : en mode **Test**, seuls les comptes listés dans **Utilisateurs test**
+     peuvent se connecter ; publier l'application pour l'ouvrir à tous ;
+   - **Accès aux données** : rien à ajouter, `openid`, `email` et `profile` sont des scopes non
+     sensibles (pas de validation Google, même une fois publiée).
+3. **Clients** (ou Identifiants → Créer des identifiants → ID client OAuth) :
+   - type **Application Web** ;
+   - origines JavaScript autorisées : aucune (flux côté serveur) ;
+   - **URI de redirection autorisés** : `https://localhost:9443/auth/google/callback` (Google accepte
+     `localhost` comme exception à la règle du domaine public) ;
+   - **Créer** : copier l'ID client (`….apps.googleusercontent.com`) et le **code secret**, qui n'est
+     plus affiché en entier ensuite (sinon en régénérer un).
+
+**Erreurs fréquentes** :
+
+- `redirect_uri_mismatch` : l'URI doit correspondre au caractère près (schéma, port, pas de `/`
+  final) ; une modification peut mettre quelques minutes à être prise en compte ;
+- `access_denied` / « application en cours de test » : le compte n'est pas dans les utilisateurs test.
 
 **Variables** : `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`.
 
@@ -97,13 +115,29 @@ C'est le fournisseur le plus exigeant.
 
 **Côté Apple Developer** (compte payant requis) :
 
-1. **Identifiers → App ID** avec la capacité *Sign in with Apple* activée.
-2. **Identifiers → Services ID** : son identifiant (ex. `fr.exemple.web`) est le **`client_id`**.
-   Activer *Sign in with Apple*, le rattacher à l'App ID, déclarer le domaine et la **Return URL** :
-   `https://oidc-demo.example.com:9443/auth/apple/callback`. Apple **refuse `localhost` et les IP**,
-   mais **accepte un port**.
-3. **Keys** : créer une clé *Sign in with Apple*. Le fichier `.p8` ne se télécharge **qu'une fois**.
-   Noter son **Key ID**, et le **Team ID** du compte.
+Tout se passe sur <https://developer.apple.com/account>, rubrique **Certificates, IDs & Profiles**.
+
+1. **Identifiers → + → App IDs**, type **App** :
+   - description libre, Bundle ID **Explicit** (ex. `fr.exemple.app`) ;
+   - dans Capabilities, cocher **Sign in with Apple** (laisser « Enable as a primary App ID ») ;
+   - **Continue → Register**.
+2. **Identifiers → + → Services IDs** : son identifiant (ex. `fr.exemple.web`) est le **`client_id`**,
+   et sa description est le nom affiché à l'utilisateur pendant la connexion.
+   - **Register**, puis rouvrir le Services ID, cocher **Sign in with Apple** → **Configure** ;
+   - Primary App ID : celui de l'étape 1 ;
+   - **Domains and Subdomains** : `oidc-demo.example.com` ;
+   - **Return URLs** : `https://oidc-demo.example.com:9443/auth/apple/callback`. Apple **refuse
+     `localhost` et les IP**, mais **accepte un port** ;
+   - **Next → Done → Continue → Save**.
+3. **Keys → +** : nom libre, cocher **Sign in with Apple** → **Configure** → choisir l'App ID de
+   l'étape 1 → **Save → Continue → Register → Download**. Le fichier `AuthKey_<KEYID>.p8` ne se
+   télécharge **qu'une fois** : le ranger hors du dépôt versionné (ici `var/certs/`, `chmod 600`).
+   Noter son **Key ID** (10 caractères, sur la page de la clé).
+4. Le **Team ID** est affiché en haut à droite du portail (ou dans *Membership details*).
+
+L'hôte de la Return URL doit pointer sur le poste : `127.0.0.1 oidc-demo.example.com` dans
+`/etc/hosts`, et la connexion se lance depuis `https://oidc-demo.example.com:9443/login` (la redirect
+URI est déduite de l'hôte de la requête).
 
 **Secret client** : chez Apple, c'est un **JWT ES256** signé avec la clé `.p8`, valable **6 mois au
 plus**. La commande [`app:apple:client-secret`](src/Command/AppleClientSecretCommand.php) le génère :
@@ -137,6 +171,9 @@ absolu** : `%kernel.project_dir%` n'est pas résolu dans un `.env`), et affiche 
   [`AppleUserCaptureListener`](src/EventListener/AppleUserCaptureListener.php) le met en session avant
   le firewall. Ce champ n'est **pas signé** : à prendre comme une suggestion. Pour le revoir, retirer
   l'application dans les réglages du compte Apple (« Se connecter avec Apple »).
+- Erreurs probables au premier essai : `invalid_client` (JWT, Team ID ou Key ID incorrects, ou JWT
+  expiré) ; `invalid_grant` (code déjà utilisé ou expiré, ou redirect URI différente de celle de
+  l'autorisation).
 - Avec « Masquer mon adresse », l'email est un relais `@privaterelay.appleid.com` : ne pas s'en servir
   comme identifiant.
 
