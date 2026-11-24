@@ -11,7 +11,7 @@ fournisseur**, la config qui a marché et les pièges rencontrés. Pour les opti
 - [Doc Access Tokens](https://symfony.com/doc/8.2/security/access_token.html) (le pendant API : jetons bearer)
 
 **Statut** : les trois connexions ont été validées en conditions réelles le 2026-11-24, sur Symfony
-**8.2.0-BETA2** et PHP 8.5. Né comme prototype (« lot 0 ») de la réécriture de l'outil MR Photographes.
+**8.2.0-BETA2** et PHP 8.5.
 
 ## Sommaire
 
@@ -36,10 +36,10 @@ cp .env .env.local   # puis renseigner les variables de chaque fournisseur (voir
 ```
 
 ```bash
-symfony serve --port=9443 --p12=var/certs/lot0.p12 --no-workers
+symfony serve --port=9443 --p12=var/certs/server.p12 --no-workers
 ```
 
-Puis `https://localhost:9443/login` (ou `https://lot0.mr-photographes.fr:9443/login` pour Apple, voir
+Puis `https://localhost:9443/login` (ou `https://oidc-demo.example.com:9443/login` pour Apple, voir
 [HTTPS local](#https-local)). La page `/moi` affiche les claims reçues et les attributs du jeton de
 sécurité (jetons tronqués).
 
@@ -100,7 +100,7 @@ C'est le fournisseur le plus exigeant.
 1. **Identifiers → App ID** avec la capacité *Sign in with Apple* activée.
 2. **Identifiers → Services ID** : son identifiant (ex. `fr.exemple.web`) est le **`client_id`**.
    Activer *Sign in with Apple*, le rattacher à l'App ID, déclarer le domaine et la **Return URL** :
-   `https://lot0.mr-photographes.fr:9443/auth/apple/callback`. Apple **refuse `localhost` et les IP**,
+   `https://oidc-demo.example.com:9443/auth/apple/callback`. Apple **refuse `localhost` et les IP**,
    mais **accepte un port**.
 3. **Keys** : créer une clé *Sign in with Apple*. Le fichier `.p8` ne se télécharge **qu'une fois**.
    Noter son **Key ID**, et le **Team ID** du compte.
@@ -163,20 +163,20 @@ RS256 (défaut accepté).
 ## HTTPS local
 
 Symfony CLI avec un certificat [mkcert](https://github.com/FiloSottile/mkcert) valable pour
-`localhost`, `127.0.0.1` et `lot0.mr-photographes.fr` (`var/certs/`, non versionné) :
+`localhost`, `127.0.0.1` et `oidc-demo.example.com` (`var/certs/`, non versionné) :
 
 ```bash
-mkcert -cert-file var/certs/lot0.pem -key-file var/certs/lot0-key.pem localhost 127.0.0.1 lot0.mr-photographes.fr
+mkcert -cert-file var/certs/server.pem -key-file var/certs/server-key.pem localhost 127.0.0.1 oidc-demo.example.com
 ```
 
 ```bash
-openssl pkcs12 -export -in var/certs/lot0.pem -inkey var/certs/lot0-key.pem -out var/certs/lot0.p12 -passout pass:
+openssl pkcs12 -export -in var/certs/server.pem -inkey var/certs/server-key.pem -out var/certs/server.p12 -passout pass:
 ```
 
 - `symfony serve --p12` attend un p12 **sans mot de passe** : celui produit par `mkcert -pkcs12`
   (mot de passe « changeit ») est refusé.
 - **Port fixe** : il fait partie des redirect URI enregistrées chez les fournisseurs.
-- Pour Apple : `127.0.0.1 lot0.mr-photographes.fr` dans `/etc/hosts`, et se connecter depuis cet hôte.
+- Pour Apple : `127.0.0.1 oidc-demo.example.com` dans `/etc/hosts`, et se connecter depuis cet hôte.
   `oidc_login` construit la redirect URI à partir de l'hôte de la requête.
 
 ## Déconnexion

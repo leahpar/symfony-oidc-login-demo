@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../schema.json
 #
-# Lot 0 — prototype jetable : connexion OIDC native (oidc_login, Symfony 8.2).
+# Démo : connexion OIDC native (oidc_login, Symfony 8.2).
 #
 # oidc_login ne gère qu'un fournisseur par firewall : un firewall par fournisseur
 # (pattern limité à /auth/<fournisseur>/), tous dans le même `context` que `main`,
