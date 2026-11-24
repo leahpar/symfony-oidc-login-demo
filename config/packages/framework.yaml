@@ -1,0 +1,16 @@
+# see https://symfony.com/doc/current/reference/configuration/framework.html
+framework:
+    secret: '%env(APP_SECRET)%'
+
+    session:
+        # Apple renvoie le code par un POST cross-site (response_mode=form_post) :
+        # sans SameSite=None, le cookie de session n'est pas envoyé, le « state »
+        # est introuvable et la connexion échoue. SameSite=None impose Secure (HTTPS).
+        cookie_samesite: none
+        cookie_secure: true
+
+when@test:
+    framework:
+        test: true
+        session:
+            storage_factory_id: session.storage.factory.mock_file

@@ -1,0 +1,22 @@
+{#
+    Boutons de connexion, repris du composant OAuthButtons.vue de letmecount.
+    Toujours lier le start_path (_oidc_login_start_<firewall>), jamais le check_path.
+
+    Apple impose l'un de ses trois styles officiels (noir, blanc, blanc avec
+    contour) et un bouton pas moins visible que les autres : la variante
+    « blanc avec contour » est celle qui s'aligne avec Google et Pocket ID.
+#}
+<div class="boutons-oidc">
+    <a class="bouton-oidc" href="{{ path('_oidc_login_start_google') }}">
+        {{ include('logos/google.svg') }}
+        Continuer avec Google
+    </a>
+    <a class="bouton-oidc" href="{{ path('_oidc_login_start_apple') }}">
+        {{ include('logos/apple.svg') }}
+        Continuer avec Apple
+    </a>
+    <a class="bouton-oidc" href="{{ path('_oidc_login_start_pocketid') }}">
+        {{ include('logos/pocketid.svg') }}
+        Continuer avec Pocket ID
+    </a>
+</div>

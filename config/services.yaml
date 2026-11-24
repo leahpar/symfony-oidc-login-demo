@@ -1,0 +1,21 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/'
+
+    # un user provider par fournisseur : il préfixe l'identifiant (fournisseur:sub)
+    app.user_provider.apple:
+        class: App\Security\ProtoUserProvider
+        arguments: { $fournisseur: apple }
+    app.user_provider.google:
+        class: App\Security\ProtoUserProvider
+        arguments: { $fournisseur: google }
+    app.user_provider.pocketid:
+        class: App\Security\ProtoUserProvider
+        arguments: { $fournisseur: pocketid }
+    app.user_provider.main:
+        class: App\Security\ProtoUserProvider
+        arguments: { $fournisseur: '' }

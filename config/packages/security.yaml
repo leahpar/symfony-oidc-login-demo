@@ -1,0 +1,87 @@
+# yaml-language-server: $schema=../schema.json
+#
+# Lot 0 — prototype jetable : connexion OIDC native (oidc_login, Symfony 8.2).
+#
+# oidc_login ne gère qu'un fournisseur par firewall : un firewall par fournisseur
+# (pattern limité à /auth/<fournisseur>/), tous dans le même `context` que `main`,
+# qui récupère donc le jeton posé par l'un d'eux.
+security:
+    providers:
+        apple_users: { id: app.user_provider.apple }
+        google_users: { id: app.user_provider.google }
+        pocketid_users: { id: app.user_provider.pocketid }
+        # rafraîchit n'importe quel ProtoUser (firewall main)
+        proto_users: { id: app.user_provider.main }
+
+    firewalls:
+        dev:
+            pattern: ^/(_profiler(/|$)|(_wdt|assets|build)/)
+            security: false
+
+        apple:
+            pattern: ^/auth/apple/
+            context: proto
+            provider: apple_users
+            oidc_login:
+                provider_uri: https://appleid.apple.com
+                client_id: '%env(APPLE_CLIENT_ID)%'
+                # secret client = JWT ES256 signé avec la clé .p8 (6 mois max) :
+                # bin/console app:apple:client-secret
+                client_authentication:
+                    client_secret_post: '%env(APPLE_CLIENT_SECRET)%'
+                # « name » et « email » imposent response_mode=form_post chez Apple
+                scope: [openid, name, email]
+                authorization_params:
+                    response_mode: form_post
+                # Apple n'expose pas d'endpoint UserInfo : les claims sont dans l'ID token
+                user_data_source: id_token
+                check_path: /auth/apple/callback
+                start_path: /auth/apple/start
+                failure_path: app_login
+                default_target_path: app_moi
+
+        google:
+            pattern: ^/auth/google/
+            context: proto
+            provider: google_users
+            oidc_login:
+                provider_uri: https://accounts.google.com
+                client_id: '%env(GOOGLE_CLIENT_ID)%'
+                client_authentication:
+                    client_secret_basic: '%env(GOOGLE_CLIENT_SECRET)%'
+                scope: [openid, profile, email]
+                check_path: /auth/google/callback
+                start_path: /auth/google/start
+                failure_path: app_login
+                default_target_path: app_moi
+
+        pocketid:
+            pattern: ^/auth/pocketid/
+            context: proto
+            provider: pocketid_users
+            oidc_login:
+                provider_uri: '%env(POCKETID_URI)%'
+                client_id: '%env(POCKETID_CLIENT_ID)%'
+                client_authentication:
+                    client_secret_basic: '%env(POCKETID_CLIENT_SECRET)%'
+                scope: [openid, profile, email, groups]
+                check_path: /auth/pocketid/callback
+                start_path: /auth/pocketid/start
+                failure_path: app_login
+                default_target_path: app_moi
+                # Pocket ID annonce un end_session_endpoint, mais on garde une déconnexion
+                # locale seulement (voir README, « Déconnexion »)
+
+        main:
+            lazy: true
+            context: proto
+            provider: proto_users
+            # aucun authenticator ici : un anonyme sur une page protégée est envoyé
+            # sur /login, qui propose les trois fournisseurs
+            entry_point: App\Security\LoginEntryPoint
+            logout:
+                path: app_logout
+                target: app_home
+
+    access_control:
+        - { path: ^/moi, roles: ROLE_USER }

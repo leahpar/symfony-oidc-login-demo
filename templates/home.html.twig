@@ -1,0 +1,10 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <h1>Lot 0 — prototype oidc_login</h1>
+    {% if app.user %}
+        <p>Connecté : <strong>{{ app.user.nomAffiche }}</strong> (<code>{{ app.user.userIdentifier }}</code>).</p>
+    {% else %}
+        <p>Non connecté. <a href="{{ path('app_login') }}">Se connecter</a></p>
+    {% endif %}
+{% endblock %}

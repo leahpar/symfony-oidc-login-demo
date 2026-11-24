@@ -1,0 +1,29 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <h1>Page protégée</h1>
+    <p>
+        Fournisseur : <strong>{{ app.user.fournisseur }}</strong> —
+        identifiant : <code>{{ app.user.userIdentifier }}</code> —
+        firewall du jeton : <code>{{ firewall }}</code>
+    </p>
+
+    <h2>Claims reçues</h2>
+    <table>
+        {% for nom, valeur in app.user.claims %}
+            <tr><th>{{ nom }}</th><td><code>{{ valeur is iterable ? valeur|json_encode : valeur }}</code></td></tr>
+        {% endfor %}
+    </table>
+
+    {% if appleUser %}
+        <h2>Champ « user » d'Apple (première autorisation uniquement)</h2>
+        <pre>{{ appleUser|json_encode(constant('JSON_PRETTY_PRINT') b-or constant('JSON_UNESCAPED_UNICODE')) }}</pre>
+    {% endif %}
+
+    <h2>Attributs du jeton de sécurité</h2>
+    <table>
+        {% for nom, valeur in attributs %}
+            <tr><th>{{ nom }}</th><td><code>{{ valeur ?? '(null)' }}</code></td></tr>
+        {% endfor %}
+    </table>
+{% endblock %}

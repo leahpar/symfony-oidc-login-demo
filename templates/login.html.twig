@@ -1,0 +1,14 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <h1>Connexion</h1>
+
+    {% if erreur %}
+        <div class="erreur">
+            <strong>Échec de la connexion :</strong> {{ erreur.messageKey|replace(erreur.messageData) }}<br>
+            <code>{{ erreur.message }}</code>
+        </div>
+    {% endif %}
+
+    {{ include('_boutons_oidc.html.twig') }}
+{% endblock %}
